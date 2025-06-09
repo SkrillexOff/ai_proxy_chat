@@ -72,7 +72,6 @@ export default function DialogChat({ user }) {
   const listRef = useRef(null);
   const [restoredScroll, setRestoredScroll] = useState(false);
   const [showTyping, setShowTyping] = useState(false);
-  const storage = getStorage();
   // Защита от повторных запросов
   const [sending, setSending] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -103,7 +102,7 @@ export default function DialogChat({ user }) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
       setFirstLoad(false);
     }
-  }, [dialog]);
+  }, [dialog, firstLoad]);
 
   // Восстанавливаем scrollTop только при первом входе
   useEffect(() => {
@@ -156,7 +155,6 @@ export default function DialogChat({ user }) {
     // Если последнее сообщение от пользователя и нет ассистента после него — показываем 'Пишет...'
     if (messages.length > 0) {
       const last = messages[messages.length - 1];
-      const prev = messages[messages.length - 2];
       if (last.role === 'user' && loading) {
         setShowTyping(true);
       } else if (last.role === 'assistant' && loading) {
@@ -167,7 +165,7 @@ export default function DialogChat({ user }) {
     } else {
       setShowTyping(false);
     }
-  }, [messages, loading]);
+  }, [messages, loading, isTyping]);
 
   // Проверка и загрузка файлов на imgbb
   const handleAttachFiles = async (e) => {
