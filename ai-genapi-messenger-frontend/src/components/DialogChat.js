@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, TextField, Button, List, ListItem, ListItemText, CircularProgress, IconButton, MenuItem, Slider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { Box, Typography, TextField, Button, List, ListItem, CircularProgress, IconButton, MenuItem, Slider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -12,9 +12,9 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
-import { doc, getDoc, onSnapshot, collection, addDoc, updateDoc, serverTimestamp, query, orderBy, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot, collection, addDoc, updateDoc, serverTimestamp, query, orderBy, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'firebase/storage';
+import { getStorage } from 'firebase/storage';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import remarkGfm from 'remark-gfm';
@@ -46,20 +46,6 @@ const SIZES = [
 const QUALITIES = ['auto', 'low', 'medium', 'high'];
 const FORMATS = ['png', 'jpeg', 'webp'];
 const BACKGROUNDS = ['auto', 'transparent', 'opaque'];
-const DALL_E_QUALITIES = ['standard', 'hd'];
-const DALL_E3_QUALITIES = ['standard', 'hd'];
-
-// Функция для конвертации url-изображения в base64
-async function urlToBase64(url) {
-  const res = await fetch(url);
-  const blob = await res.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
 
 export default function DialogChat({ user }) {
   const { id } = useParams();
@@ -437,18 +423,6 @@ export default function DialogChat({ user }) {
       setIsTyping(false);
       setSending(false);
     }
-  };
-
-  // Функция для обновления модели и параметров
-  const handleSettingsChange = async (field, value) => {
-    if (!dialog) return;
-    const newSettings = field === 'model'
-      ? { model: value, settings: dialog.settings }
-      : { model: dialog.model, settings: { ...dialog.settings, [field]: value } };
-    // Обновляем на сервере
-    await axios.patch(`${API_URL}/dialogs/${dialog.id}`, newSettings);
-    // Обновляем локально
-    setDialog(prev => ({ ...prev, ...newSettings }));
   };
 
   // Удаление диалога

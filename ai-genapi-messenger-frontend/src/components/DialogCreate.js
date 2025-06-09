@@ -24,7 +24,6 @@ const SIZES = [
 const QUALITIES = ['auto', 'low', 'medium', 'high'];
 const FORMATS = ['png', 'jpeg', 'webp'];
 const BACKGROUNDS = ['auto', 'transparent', 'opaque'];
-const DALL_E3_QUALITIES = ['standard', 'hd'];
 
 export default function DialogCreate({ user }) {
   const [title, setTitle] = useState('');

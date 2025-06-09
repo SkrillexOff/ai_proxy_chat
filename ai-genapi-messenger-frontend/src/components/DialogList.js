@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
-  List, ListItem, ListItemText, Button, Typography, Box, CircularProgress, IconButton, Avatar, Menu, MenuItem as MuiMenuItem, Dialog as MuiDialog, DialogTitle, DialogContent, DialogActions
+  List, ListItem, ListItemText, Button, Typography, Box, CircularProgress, IconButton, Menu, MenuItem as MuiMenuItem, Dialog as MuiDialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
