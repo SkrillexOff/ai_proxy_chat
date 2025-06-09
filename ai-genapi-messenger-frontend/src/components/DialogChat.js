@@ -14,7 +14,6 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import { doc, onSnapshot, collection, addDoc, updateDoc, serverTimestamp, query, orderBy, getDocs, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getStorage } from 'firebase/storage';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import remarkGfm from 'remark-gfm';
