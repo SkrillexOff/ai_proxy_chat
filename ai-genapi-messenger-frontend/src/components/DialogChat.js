@@ -297,32 +297,20 @@ export default function DialogChat({ user }) {
     setSending(true);
     setLoading(true);
     setIsTyping(true);
-    // Добавляем сообщение пользователя
-    const messageData = {
-      role: 'user',
-      content: input,
-      createdAt: serverTimestamp(),
-    };
-    if (attachedFiles.length > 0) {
-      messageData.images = attachedFiles.map(f => f.imgbbUrl).filter(Boolean);
-    }
-    await addDoc(collection(db, 'users', user.uid, 'dialogs', id, 'messages'), messageData);
-    setInput('');
-    setAttachedFiles([]);
-    setScrollOnSend(true);
-    // Обновляем updatedAt у диалога
-    await updateDoc(doc(db, 'users', user.uid, 'dialogs', id), { updatedAt: serverTimestamp() });
+    let imgbbUrls = [];
     try {
-      // Формируем сообщения для vision только для поддерживаемых моделей
       let msgs;
       if (VISION_MODELS.includes(dialog.model)) {
+        // Для vision: отправляем base64 напрямую в ProxyAPI
         const contentArr = [];
         if (input.trim()) {
           contentArr.push({ type: 'text', text: input });
         }
         if (attachedFiles.length > 0) {
           for (const f of attachedFiles) {
-            contentArr.push({ type: 'image_url', image_url: { url: f.imgbbUrl } });
+            // base64 to data url
+            const mime = f.file.type || 'image/jpeg';
+            contentArr.push({ type: 'image_url', image_url: { url: `data:${mime};base64,${f.croppedBase64}` } });
           }
         }
         msgs = [
@@ -357,13 +345,45 @@ export default function DialogChat({ user }) {
         messages: msgs,
         model: dialog.model,
         settings: dialog.settings,
-        images: attachedFiles.length > 0 ? attachedFiles.map(f => f.imgbbUrl).filter(Boolean) : [],
       });
-      // Добавляем сообщение ассистента
+      // После успешного ответа — загружаем изображения на imgbb для истории
+      if (VISION_MODELS.includes(dialog.model) && attachedFiles.length > 0) {
+        imgbbUrls = await Promise.all(attachedFiles.map(async (f) => {
+          const formData = new FormData();
+          formData.append('image', f.croppedBase64);
+          try {
+            const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+              method: 'POST',
+              body: formData,
+            });
+            const data = await res.json();
+            return data.success ? data.data.url : '';
+          } catch {
+            return '';
+          }
+        }));
+      } else if (attachedFiles.length > 0) {
+        // Для не-vision моделей — как раньше
+        imgbbUrls = attachedFiles.map(f => f.imgbbUrl).filter(Boolean);
+      }
+      // Сохраняем сообщение пользователя с ссылками на imgbb (для истории)
+      const messageData = {
+        role: 'user',
+        content: input,
+        createdAt: serverTimestamp(),
+      };
+      if (imgbbUrls.length > 0) {
+        messageData.images = imgbbUrls;
+      }
+      await addDoc(collection(db, 'users', user.uid, 'dialogs', id, 'messages'), messageData);
+      setInput('');
+      setAttachedFiles([]);
+      setScrollOnSend(true);
+      await updateDoc(doc(db, 'users', user.uid, 'dialogs', id), { updatedAt: serverTimestamp() });
+      // Добавляем сообщение ассистента, как раньше
       if (res.data.image) {
         let imageUrl = '';
         if (res.data.image.b64_json) {
-          // gpt-image-1: загружаем base64 на imgbb
           const base64 = res.data.image.b64_json;
           const formData = new FormData();
           formData.append('image', base64);
@@ -379,9 +399,7 @@ export default function DialogChat({ user }) {
             imageUrl = '';
           }
         } else if (res.data.image.url) {
-          // DALL·E: скачиваем по url через backend, конвертируем в base64 и загружаем на imgbb
           try {
-            // Получаем base64 через backend (обход CORS)
             const base64Res = await fetch('/api/fetch-image-base64', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
